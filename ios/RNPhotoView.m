@@ -296,19 +296,32 @@
         }
         _source = source;
         NSURL *imageURL = [NSURL URLWithString:uri];
-        UIImage *image = RCTImageFromLocalAssetURL(imageURL);
-        if (image) { // if local image
-            [self setImage:image];
-            return;
+        if (![[uri substringToIndex:4] isEqualToString:@"http"]) {
+            @try {
+                UIImage *image = RCTImageFromLocalAssetURL(imageURL);
+                if (image) { // if local image
+                    [self setImage:image];
+                    if (_onPhotoViewerLoad) {
+                        _onPhotoViewerLoad(nil);
+                    }
+                    if (_onPhotoViewerLoadEnd) {
+                        _onPhotoViewerLoadEnd(nil);
+                    }
+                    return;
+                }
+            }
+            @catch (NSException *exception) {
+                NSLog(@"%@", exception.reason);
+            }
         }
-        
+
         NSURLRequest *request = [[NSURLRequest alloc] initWithURL:imageURL];
-        
+
         __weak RNPhotoView *weakSelf = self;
         if (_onPhotoViewerLoadStart) {
             _onPhotoViewerLoadStart(nil);
         }
-        
+
         // use default values from [imageLoader loadImageWithURLRequest:request callback:callback] method
         [_bridge.imageLoader loadImageWithURLRequest:request
                                                 size:CGSizeZero
@@ -341,7 +354,7 @@
                                              _onPhotoViewerLoadEnd(nil);
                                          }
                                      }];
-        
+
     });
 }
 
